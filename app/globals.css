@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+/*
+ * RNN — "Breaking Intelligence" design system.
+ * Ported from the Stitch "Nightly News AI" project (Material-3 derived tokens).
+ * ENG-Futurism: deep oxblood surfaces, breaking-news red, glassmorphism + scanlines.
+ */
+@theme {
+  /* Surfaces & background */
+  --color-background: #200f0c;
+  --color-surface: #200f0c;
+  --color-surface-dim: #200f0c;
+  --color-surface-bright: #4a3430;
+  --color-surface-container-lowest: #1a0a07;
+  --color-surface-container-low: #291714;
+  --color-surface-container: #2e1b18;
+  --color-surface-container-high: #392522;
+  --color-surface-container-highest: #452f2c;
+  --color-surface-variant: #452f2c;
+  --color-surface-tint: #ffb4a8;
+
+  /* On-surface / text */
+  --color-on-background: #fddbd5;
+  --color-on-surface: #fddbd5;
+  --color-on-surface-variant: #e8bdb6;
+  --color-inverse-surface: #fddbd5;
+  --color-inverse-on-surface: #402b28;
+
+  /* Outlines */
+  --color-outline: #ae8882;
+  --color-outline-variant: #5e3f3a;
+
+  /* Primary — breaking-news red */
+  --color-primary: #ffb4a8;
+  --color-on-primary: #690000;
+  --color-primary-container: #cc0000;
+  --color-on-primary-container: #ffdad4;
+  --color-inverse-primary: #c00000;
+  --color-primary-fixed: #ffdad4;
+  --color-primary-fixed-dim: #ffb4a8;
+  --color-on-primary-fixed: #410000;
+  --color-on-primary-fixed-variant: #930000;
+
+  /* Secondary — institutional navy */
+  --color-secondary: #b9c7e4;
+  --color-on-secondary: #233148;
+  --color-secondary-container: #3c4962;
+  --color-on-secondary-container: #abb9d6;
+  --color-secondary-fixed: #d6e3ff;
+  --color-secondary-fixed-dim: #b9c7e4;
+  --color-on-secondary-fixed: #0d1c32;
+  --color-on-secondary-fixed-variant: #39475f;
+
+  /* Tertiary — electric blue */
+  --color-tertiary: #82cfff;
+  --color-on-tertiary: #00344b;
+  --color-tertiary-container: #006c96;
+  --color-on-tertiary-container: #c7e7ff;
+  --color-tertiary-fixed: #c6e7ff;
+  --color-tertiary-fixed-dim: #82cfff;
+  --color-on-tertiary-fixed: #001e2d;
+  --color-on-tertiary-fixed-variant: #004c6b;
+
+  /* Error */
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+
+  /* Spacing scale (4px base) */
+  --spacing-base: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 48px;
+
+  /* Radii — soft, architectural (circles kept at 9999px) */
+  --radius-sm: 0.125rem;
+  --radius: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+
+  /* Typography */
+  --font-display-lg: var(--font-archivo), "Archivo Narrow", sans-serif;
+  --font-headline-lg: var(--font-archivo), "Archivo Narrow", sans-serif;
+  --font-ticker-sm: var(--font-archivo), "Archivo Narrow", sans-serif;
+  --font-body-md: var(--font-inter), "Inter", sans-serif;
+  --font-label-caps: var(--font-jetbrains), "JetBrains Mono", monospace;
+
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 1.2;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 700;
+
+  --text-headline-lg-mobile: 24px;
+  --text-headline-lg-mobile--line-height: 1.2;
+  --text-headline-lg-mobile--font-weight: 700;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 1.6;
+  --text-body-md--letter-spacing: 0em;
+  --text-body-md--font-weight: 400;
+
+  --text-label-caps: 12px;
+  --text-label-caps--line-height: 1.4;
+  --text-label-caps--letter-spacing: 0.1em;
+  --text-label-caps--font-weight: 600;
+
+  --text-ticker-sm: 14px;
+  --text-ticker-sm--line-height: 1;
+  --text-ticker-sm--letter-spacing: 0.05em;
+  --text-ticker-sm--font-weight: 500;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-body-md);
+}
+
+/* Tailwind v4's preflight sets buttons to cursor:default — restore the pointer
+   on interactive controls (buttons, links, role=button) unless disabled. */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+a {
+  cursor: pointer;
+}
+
+/* Material Symbols icon font (loaded via <link> in layout) */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+.material-symbols-outlined.fill {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* Glassmorphism — studio-light surfaces */
+.glass-panel {
+  backdrop-filter: blur(12px);
+  background: rgba(41, 23, 20, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.glass-card {
+  backdrop-filter: blur(8px);
+  background: rgba(41, 23, 20, 0.55);
+}
+
+/* CRT scanline overlay */
+.scanline-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+  background-size: 100% 3px, 3px 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Luminous "Live" bloom */
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 5px rgba(204, 0, 0, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(204, 0, 0, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(204, 0, 0, 0.2); }
+}
+.live-pulse { animation: pulse-glow 2s infinite; }
+
+@keyframes live-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.live-blink { animation: live-blink 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Active-step shimmer — a slow light sweep across the in-progress row */
+@keyframes shimmer {
+  0% { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+.shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 180, 168, 0.12) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 2.2s linear infinite;
+}
+
+/* Barber-pole stripes for the progress bar fill */
+@keyframes progress-stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 28px 0; }
+}
+.progress-stripes {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.18) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.18) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 28px 28px;
+  animation: progress-stripes 0.8s linear infinite;
+}
+
+/* Spinning loader ring */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
+/* Scrolling ticker */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-scroll {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker 40s linear infinite;
+}
+
+/* Scrollbars */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #1a0a07; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #5e3f3a; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

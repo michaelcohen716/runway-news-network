@@ -1,0 +1,16 @@
+# Rebuilt inside the image
+node_modules
+.next
+
+# Secrets — never bake into the image (set as Railway variables instead)
+.env
+.env.*
+!.env.example
+
+# Local-only / generated
+.git
+public/segments
+*.log
+npm-debug.log*
+.DS_Store
+brand/.anchor-avatar.json
