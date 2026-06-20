@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { createJob, listJobs, serializeJob } from "@/lib/jobs";
 import { isTier } from "@/lib/models";
 import { FINAL_ONLY } from "@/lib/flags";
-import { FINAL_COOKIE, checkToken, finalPasswordConfigured } from "@/lib/auth";
+import { FINAL_COOKIE, FINAL_HEADER, checkToken, finalPasswordConfigured } from "@/lib/auth";
 
 /** GET /api/jobs : list jobs (newest first) for the dashboard feed + archive. */
 export async function GET() {
@@ -38,9 +38,14 @@ export async function POST(request: Request) {
   const tier = FINAL_ONLY ? "final" : requested;
 
   // Final-tier generation requires the access password (when one is configured).
+  // Accept the proof from either the httpOnly cookie or the x-rnn-access header
+  // (the latter is replayed from the browser's localStorage).
   if (tier === "final" && finalPasswordConfigured()) {
     const jar = await cookies();
-    if (!checkToken(jar.get(FINAL_COOKIE)?.value)) {
+    const ok =
+      checkToken(jar.get(FINAL_COOKIE)?.value) ||
+      checkToken(request.headers.get(FINAL_HEADER));
+    if (!ok) {
       return NextResponse.json(
         { error: "Final-tier generation requires the access password." },
         { status: 401 },

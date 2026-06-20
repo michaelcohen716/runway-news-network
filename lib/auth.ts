@@ -10,6 +10,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const FINAL_COOKIE = "rnn_final";
+/** Header the browser sends with the localStorage-persisted access proof. */
+export const FINAL_HEADER = "x-rnn-access";
 
 /** Whether a final-tier password is configured (gate active). */
 export function finalPasswordConfigured(): boolean {
