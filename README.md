@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/hero.png" alt="Runway News Network — AI-anchored news broadcasts" width="100%" />
+</p>
+
 # Runway News Network (RNN)
 
 **Paste a news link. Get a 30-second AI-anchored broadcast.**
