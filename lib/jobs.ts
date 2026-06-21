@@ -42,6 +42,10 @@ export interface Job {
 
 const jobs = new Map<string, Job>();
 
+/** A DB job in progress but untouched for this long is considered dead (the
+ *  server restarted). Live jobs heartbeat well within this window. */
+const STALE_JOB_MS = 3 * 60 * 1000;
+
 export function getJob(id: string): Job | undefined {
   return jobs.get(id);
 }
@@ -79,18 +83,35 @@ export async function getJobView(id: string): Promise<JobView | null> {
   const row = await getJobRow(id);
   if (!row) return null;
   const sb = row.storyboard as Storyboard | null;
+
+  // A job that's "in progress" in the DB but not in memory and hasn't been
+  // touched recently was killed (server restart/deploy) — surface it as failed
+  // instead of polling "generating" forever. Live jobs heartbeat every ~45s.
+  let status = row.status as JobView["status"];
+  let error = (row.error as string | null) ?? null;
+  let errorCode = (row.error_code as string | null) ?? null;
+  const inProgress = !["completed", "failed"].includes(status);
+  if (inProgress) {
+    const updatedAt = Date.parse((row.updated_at as string) ?? (row.created_at as string));
+    if (Date.now() - updatedAt > STALE_JOB_MS) {
+      status = "failed";
+      error = "Generation was interrupted (the server restarted). Please try again.";
+      errorCode = "generation";
+    }
+  }
+
   return {
     id: row.id as string,
     sourceUrl: row.source_url as string,
     tier: (row.tier as string | null) ?? null,
-    status: row.status as JobView["status"],
+    status,
     progress: (row.progress as number | null) ?? 0,
     headline: (row.headline as string | null) ?? sb?.headline ?? null,
     summary: (row.summary as string | null) ?? sb?.summary ?? null,
     keyPoints: sb?.scenes.map((s) => s.chyron).filter(Boolean) ?? [],
     videoUrl: (row.video_url as string | null) ?? null,
-    error: (row.error as string | null) ?? null,
-    errorCode: (row.error_code as string | null) ?? null,
+    error,
+    errorCode,
     createdAt: Date.parse(row.created_at as string),
   };
 }
@@ -143,6 +164,13 @@ async function run(job: Job): Promise<void> {
     const batch = logBuf.splice(0, logBuf.length);
     void insertLogs(job.id, batch);
   };
+
+  // Heartbeat: keep the DB row's updated_at fresh while the (possibly long,
+  // quiet) generating stage runs, so getJobView can tell live jobs from dead
+  // ones killed by a restart.
+  const heartbeat = setInterval(() => {
+    void updateJob(job.id, { progress: job.progress });
+  }, 45_000);
 
   await withLogSink(
     (level, message) => {
@@ -198,6 +226,7 @@ async function run(job: Job): Promise<void> {
           errorCode: job.errorCode,
         });
       } finally {
+        clearInterval(heartbeat);
         flushLogs();
         await rm(work, { recursive: true, force: true });
       }

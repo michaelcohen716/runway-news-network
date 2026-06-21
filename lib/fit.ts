@@ -69,12 +69,13 @@ export async function fitStoryboard(
 
   const storyboard = await generateStoryboard(article, tier);
 
-  // Initial synthesis of every scene.
-  const fitted: FittedScene[] = [];
-  for (const scene of storyboard.scenes) {
-    const { audio, durationSeconds } = await synthesizeNarration(scene.narration, tier);
-    fitted.push({ scene, audio, durationSeconds });
-  }
+  // Initial synthesis of every scene — in parallel (each is its own TTS task).
+  const fitted: FittedScene[] = await Promise.all(
+    storyboard.scenes.map(async (scene) => {
+      const { audio, durationSeconds } = await synthesizeNarration(scene.narration, tier);
+      return { scene, audio, durationSeconds };
+    }),
+  );
 
   let total = fitted.reduce((s, f) => s + f.durationSeconds, 0);
   let rounds = 0;
@@ -106,15 +107,17 @@ export async function fitStoryboard(
       rawScale > 1 ? article.body : undefined,
     );
 
-    for (const f of fitted) {
-      const next = revisions.get(f.scene.index);
-      if (next && next.trim() && next !== f.scene.narration) {
-        f.scene.narration = next;
-        const { audio, durationSeconds } = await synthesizeNarration(next, tier);
-        f.audio = audio;
-        f.durationSeconds = durationSeconds;
-      }
-    }
+    await Promise.all(
+      fitted.map(async (f) => {
+        const next = revisions.get(f.scene.index);
+        if (next && next.trim() && next !== f.scene.narration) {
+          f.scene.narration = next;
+          const { audio, durationSeconds } = await synthesizeNarration(next, tier);
+          f.audio = audio;
+          f.durationSeconds = durationSeconds;
+        }
+      }),
+    );
 
     total = fitted.reduce((s, f) => s + f.durationSeconds, 0);
   }
@@ -133,15 +136,17 @@ export async function fitStoryboard(
       })),
       tier,
     );
-    for (const f of overLong) {
-      const next = revisions.get(f.scene.index);
-      if (next && next.trim()) {
-        f.scene.narration = next;
-        const { audio, durationSeconds } = await synthesizeNarration(next, tier);
-        f.audio = audio;
-        f.durationSeconds = durationSeconds;
-      }
-    }
+    await Promise.all(
+      overLong.map(async (f) => {
+        const next = revisions.get(f.scene.index);
+        if (next && next.trim()) {
+          f.scene.narration = next;
+          const { audio, durationSeconds } = await synthesizeNarration(next, tier);
+          f.audio = audio;
+          f.durationSeconds = durationSeconds;
+        }
+      }),
+    );
     total = fitted.reduce((s, f) => s + f.durationSeconds, 0);
   }
 

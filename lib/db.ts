@@ -67,7 +67,7 @@ export async function getJobRow(id: string): Promise<Record<string, unknown> | n
     const { data, error } = await c
       .from("jobs")
       .select(
-        "id,source_url,tier,status,progress,headline,summary,storyboard,video_url,error,error_code,created_at",
+        "id,source_url,tier,status,progress,headline,summary,storyboard,video_url,error,error_code,created_at,updated_at",
       )
       .eq("id", id)
       .maybeSingle();

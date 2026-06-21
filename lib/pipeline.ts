@@ -82,8 +82,11 @@ export async function runPipeline(
   // Each scene → a clip with its audio, produced concurrently.
   log.info(`pipeline: generating ${fit.scenes.length} scenes (tier=${tier ?? "draft"})`);
   progress("generating", 40);
+  const totalScenes = fit.scenes.length;
+  let doneScenes = 0;
   const scenes: SegmentScene[] = await Promise.all(
     fit.scenes.map(async (f): Promise<SegmentScene> => {
+      const result = await (async (): Promise<SegmentScene> => {
       const i = f.scene.index;
 
       if (f.scene.kind === "anchor" && m.lipSync.enabled) {
@@ -135,6 +138,11 @@ export async function runPipeline(
       await writeFile(audioPath, f.audio);
       await muxNarration(silentPath, audioPath, clipPath);
       return { clipPath, chyron: f.scene.chyron };
+      })();
+      // Advance progress 40 → 80 as each scene finishes (also heartbeats the DB).
+      doneScenes++;
+      progress("generating", 40 + Math.round((doneScenes / totalScenes) * 40));
+      return result;
     }),
   );
 
