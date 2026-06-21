@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Shell, Icon } from "../../components/Chrome";
 import { hostOf, errorLabel, errorIcon, type JobView } from "../../lib/jobView";
+import { FINAL_ONLY } from "@/lib/flags";
 
 const STAGES = [
   {
@@ -38,6 +39,16 @@ function stageIndex(status: string): number {
   return STAGES.findIndex((s) => s.key === status);
 }
 
+/** Minimal shape of a past broadcast used by the showcase (from /api/archive). */
+interface ShowcaseItem {
+  id: string;
+  headline: string | null;
+  sourceUrl: string;
+  videoUrl: string | null;
+  tier: string | null;
+  status: string;
+}
+
 function mmss(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -50,8 +61,45 @@ export function SegmentView({ id }: { id: string }) {
   const [elapsed, setElapsed] = useState(0);
   const [tick, setTick] = useState(0);
 
+  // "While you wait" showcase of past broadcasts (from the DB archive).
+  const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
+  const [scIdx, setScIdx] = useState(0);
+  const [scMuted, setScMuted] = useState(true);
+  const scVideoRef = useRef<HTMLVideoElement>(null);
+
   const inProgress =
     !!job && job.status !== "completed" && job.status !== "failed";
+
+  // Load past completed broadcasts to play while this one generates.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/archive")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!active) return;
+        const items: ShowcaseItem[] = (d.jobs ?? []).filter(
+          (j: ShowcaseItem) =>
+            j.status === "completed" &&
+            j.videoUrl &&
+            j.id !== id &&
+            (!FINAL_ONLY || j.tier === "final"),
+        );
+        setShowcase(items);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  // Keep mute in sync across auto-advances (avoids React's muted-prop quirk).
+  useEffect(() => {
+    if (scVideoRef.current) scVideoRef.current.muted = scMuted;
+  }, [scMuted, scIdx]);
+
+  const scCurrent = showcase.length ? showcase[scIdx % showcase.length] : null;
+  const advanceShowcase = () =>
+    setScIdx((i) => (showcase.length ? (i + 1) % showcase.length : 0));
 
   // Elapsed clock + rotating sub-status, only while producing.
   useEffect(() => {
@@ -221,6 +269,60 @@ export function SegmentView({ id }: { id: string }) {
                         <Icon name="schedule" className="text-[14px]" />
                         {mmss(elapsed)}
                       </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* While you wait — autoplay past broadcasts, advancing on end */}
+              {!done && !failed && scCurrent && (
+                <div className="mt-lg">
+                  <div className="mb-sm flex items-center justify-between">
+                    <span className="flex items-center gap-xs font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">
+                      <Icon name="movie" className="text-[12px]" />
+                      While you wait — recent broadcasts
+                    </span>
+                    <span className="font-label-caps text-[10px] uppercase text-outline">
+                      {(scIdx % showcase.length) + 1} / {showcase.length}
+                    </span>
+                  </div>
+
+                  <div className="relative overflow-hidden border border-outline-variant bg-black shadow-2xl">
+                    <video
+                      ref={scVideoRef}
+                      key={scCurrent.id}
+                      src={scCurrent.videoUrl ?? undefined}
+                      autoPlay
+                      muted={scMuted}
+                      playsInline
+                      onEnded={advanceShowcase}
+                      onError={advanceShowcase}
+                      className="aspect-video w-full object-cover"
+                    />
+
+                    {/* Clearly a past clip, not the one being generated */}
+                    <div className="pointer-events-none absolute left-sm top-sm flex items-center gap-xs rounded-sm bg-black/70 px-sm py-xs backdrop-blur-md">
+                      <Icon name="history" className="text-[12px] text-on-surface" />
+                      <span className="font-label-caps text-[9px] uppercase tracking-widest text-on-surface">
+                        Past broadcast
+                      </span>
+                    </div>
+
+                    {/* Mute toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setScMuted((m) => !m)}
+                      aria-label={scMuted ? "Unmute" : "Mute"}
+                      className="absolute right-sm top-sm flex h-7 w-7 items-center justify-center rounded-sm bg-black/70 text-on-surface backdrop-blur-md transition-colors hover:text-primary"
+                    >
+                      <Icon name={scMuted ? "volume_off" : "volume_up"} className="text-[16px]" />
+                    </button>
+
+                    {/* Caption */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-sm pt-lg">
+                      <p className="line-clamp-1 font-headline-lg text-[13px] uppercase leading-tight text-on-surface">
+                        {scCurrent.headline ?? hostOf(scCurrent.sourceUrl)}
+                      </p>
                     </div>
                   </div>
                 </div>
