@@ -98,8 +98,8 @@ export function SegmentView({ id }: { id: string }) {
   }, [scMuted, scIdx]);
 
   const scCurrent = showcase.length ? showcase[scIdx % showcase.length] : null;
-  const advanceShowcase = () =>
-    setScIdx((i) => (showcase.length ? (i + 1) % showcase.length : 0));
+  const stepShowcase = (dir: 1 | -1) =>
+    setScIdx((i) => (showcase.length ? (i + dir + showcase.length) % showcase.length : 0));
 
   // Elapsed clock + rotating sub-status, only while producing.
   useEffect(() => {
@@ -295,10 +295,32 @@ export function SegmentView({ id }: { id: string }) {
                       autoPlay
                       muted={scMuted}
                       playsInline
-                      onEnded={advanceShowcase}
-                      onError={advanceShowcase}
+                      onEnded={() => stepShowcase(1)}
+                      onError={() => stepShowcase(1)}
                       className="aspect-video w-full object-cover"
                     />
+
+                    {/* Prev / Next controls */}
+                    {showcase.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => stepShowcase(-1)}
+                          aria-label="Previous broadcast"
+                          className="absolute left-sm top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-on-surface opacity-70 backdrop-blur-md transition-all hover:bg-black/80 hover:opacity-100"
+                        >
+                          <Icon name="chevron_left" className="text-2xl" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => stepShowcase(1)}
+                          aria-label="Next broadcast"
+                          className="absolute right-sm top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-on-surface opacity-70 backdrop-blur-md transition-all hover:bg-black/80 hover:opacity-100"
+                        >
+                          <Icon name="chevron_right" className="text-2xl" />
+                        </button>
+                      </>
+                    )}
 
                     {/* Clearly a past clip, not the one being generated */}
                     <div className="pointer-events-none absolute left-sm top-sm flex items-center gap-xs rounded-sm bg-black/70 px-sm py-xs backdrop-blur-md">
