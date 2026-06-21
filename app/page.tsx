@@ -106,8 +106,10 @@ export default function Home() {
   }
 
   // Shared classes for the two crossfading rows (stacked in one grid cell).
+  // Opacity-only crossfade with a soft easing — no transforms or layout changes,
+  // so the swap reads as a clean dissolve with zero hop.
   const rowBase =
-    "col-start-1 row-start-1 flex flex-col gap-sm transition-all duration-500 ease-out md:flex-row md:items-center";
+    "col-start-1 row-start-1 flex flex-col gap-sm transition-opacity duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] md:flex-row md:items-center";
   const inputBase =
     "w-full border-b border-outline bg-surface-container-lowest py-md pl-xl pr-md text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary-container disabled:opacity-100";
   const buttonBase =
@@ -143,9 +145,7 @@ export default function Home() {
                 <div
                   aria-hidden={view !== "lock"}
                   className={`${rowBase} ${
-                    view === "lock"
-                      ? "opacity-100"
-                      : "pointer-events-none -translate-y-1 opacity-0"
+                    view === "lock" ? "opacity-100" : "pointer-events-none opacity-0"
                   }`}
                 >
                   <div className="relative flex-grow">
@@ -177,9 +177,7 @@ export default function Home() {
                 <div
                   aria-hidden={view !== "gen"}
                   className={`${rowBase} ${
-                    view === "gen"
-                      ? "opacity-100"
-                      : "pointer-events-none translate-y-1 opacity-0"
+                    view === "gen" ? "opacity-100" : "pointer-events-none opacity-0"
                   }`}
                 >
                   <div className="relative flex-grow">
@@ -209,19 +207,22 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Gate helper / error — fades with the lock view */}
-            <div
-              className={`overflow-hidden transition-all duration-500 ease-out ${
-                view === "lock" ? "mt-md max-h-16 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <p className="flex items-center justify-center gap-xs font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">
-                <Icon name="shield" className="text-[12px]" />
-                Access-protected — unlock to generate on this browser
-              </p>
-              {gateError && (
-                <p className="mt-xs font-label-caps text-[10px] uppercase text-error">{gateError}</p>
-              )}
+            {/* Gate helper / error — constant-height slot, fades only (no reflow) */}
+            <div className="mt-md h-8">
+              <div
+                className={`transition-opacity duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  view === "lock" ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <p
+                  className={`flex items-center justify-center gap-xs font-label-caps text-[10px] uppercase tracking-widest ${
+                    gateError ? "text-error" : "text-on-surface-variant"
+                  }`}
+                >
+                  <Icon name={gateError ? "error" : "shield"} className="text-[12px]" />
+                  {gateError ?? "Access-protected — unlock to generate on this browser"}
+                </p>
+              </div>
             </div>
 
             {/* Quality selector (and unlocked indicator) */}
@@ -248,14 +249,6 @@ export default function Home() {
                   </button>
                 ))
               )}
-              <span
-                className={`flex items-center gap-xs rounded-sm border border-tertiary/40 bg-tertiary-container/15 px-sm py-xs text-tertiary transition-all duration-500 ${
-                  showGate && gate.authorized ? "opacity-100" : "hidden opacity-0"
-                }`}
-              >
-                <Icon name="lock_open" className="text-[14px]" />
-                Unlocked
-              </span>
             </div>
 
             {error && (
