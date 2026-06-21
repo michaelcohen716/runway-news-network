@@ -50,3 +50,17 @@ export async function POST(request: Request) {
   });
   return res;
 }
+
+/** Lock this browser again: clear the access cookie. (Clients also clear their
+ *  localStorage token.) */
+export async function DELETE() {
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(FINAL_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  return res;
+}
