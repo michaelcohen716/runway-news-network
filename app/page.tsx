@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Icon } from "./components/Chrome";
 import { FINAL_ONLY } from "@/lib/flags";
@@ -15,14 +15,18 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Final-tier access gate.
+  // Final-tier access gate. Start "locked" when prod is final-only so the first
+  // paint shows the unlock view (no flash); the auth check then reveals generate.
   const [gate, setGate] = useState<{ required: boolean; authorized: boolean }>({
-    required: false,
-    authorized: true,
+    required: FINAL_ONLY,
+    authorized: false,
   });
   const [password, setPassword] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [gateError, setGateError] = useState<string | null>(null);
+
+  const urlRef = useRef<HTMLInputElement>(null);
+  const pwRef = useRef<HTMLInputElement>(null);
 
   // On load, validate any persisted token so this browser stays unlocked.
   useEffect(() => {
@@ -39,6 +43,16 @@ export default function Home() {
   const effectiveTier = FINAL_ONLY ? "final" : tier;
   const showGate = effectiveTier === "final" && gate.required;
   const needsUnlock = showGate && !gate.authorized;
+  const view: "lock" | "gen" = needsUnlock ? "lock" : "gen";
+
+  // Move focus to whichever input just became active.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (view === "lock") pwRef.current?.focus();
+      else urlRef.current?.focus();
+    }, 60);
+    return () => clearTimeout(t);
+  }, [view]);
 
   async function unlock() {
     if (!password) return;
@@ -91,6 +105,14 @@ export default function Home() {
     else generate();
   }
 
+  // Shared classes for the two crossfading rows (stacked in one grid cell).
+  const rowBase =
+    "col-start-1 row-start-1 flex flex-col gap-sm transition-all duration-500 ease-out md:flex-row md:items-center";
+  const inputBase =
+    "w-full border-b border-outline bg-surface-container-lowest py-md pl-xl pr-md text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary-container disabled:opacity-100";
+  const buttonBase =
+    "flex items-center justify-center gap-sm whitespace-nowrap bg-primary-container px-lg py-md font-display-lg text-headline-lg-mobile uppercase text-on-primary-container transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50";
+
   return (
     <Shell>
       <div className="flex flex-1 flex-col items-center justify-center px-md py-xl text-center">
@@ -114,74 +136,93 @@ export default function Home() {
           <form onSubmit={handleSubmit} className="mt-xl">
             <div className="glass-panel relative overflow-hidden p-sm shadow-2xl">
               <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-              <div className="flex flex-col gap-sm md:flex-row md:items-center">
-                {needsUnlock ? (
-                  // Password is the primary input until this browser is unlocked.
-                  <>
-                    <div className="relative flex-grow">
-                      <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">
-                        lock
-                      </span>
-                      <input
-                        type="password"
-                        required
-                        autoFocus
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="ENTER ACCESS PASSWORD"
-                        autoComplete="current-password"
-                        className="w-full border-b border-outline bg-surface-container-lowest py-md pl-xl pr-md font-label-caps text-label-caps uppercase tracking-widest text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary-container"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={unlocking || !password}
-                      className="flex items-center justify-center gap-sm whitespace-nowrap bg-primary-container px-lg py-md font-display-lg text-headline-lg-mobile uppercase text-on-primary-container transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Icon name="lock_open" />
-                      {unlocking ? "Unlocking…" : "Unlock"}
-                    </button>
-                  </>
-                ) : (
-                  // Unlocked (or no gate): the normal generate form.
-                  <>
-                    <div className="relative flex-grow">
-                      <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">
-                        link
-                      </span>
-                      <input
-                        type="url"
-                        required
-                        autoFocus
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        placeholder="https://example.com/news/story"
-                        className="w-full border-b border-outline bg-surface-container-lowest py-md pl-xl pr-md font-body-md text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary-container"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="flex items-center justify-center gap-sm whitespace-nowrap bg-primary-container px-lg py-md font-display-lg text-headline-lg-mobile uppercase text-on-primary-container transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Icon name="bolt" />
-                      {submitting ? "Starting…" : "Generate"}
-                    </button>
-                  </>
-                )}
+
+              {/* Both rows occupy the same grid cell and crossfade between states. */}
+              <div className="grid">
+                {/* Unlock row */}
+                <div
+                  aria-hidden={view !== "lock"}
+                  className={`${rowBase} ${
+                    view === "lock"
+                      ? "opacity-100"
+                      : "pointer-events-none -translate-y-1 opacity-0"
+                  }`}
+                >
+                  <div className="relative flex-grow">
+                    <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">
+                      lock
+                    </span>
+                    <input
+                      ref={pwRef}
+                      type="password"
+                      disabled={view !== "lock"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="ENTER ACCESS PASSWORD"
+                      autoComplete="current-password"
+                      className={`${inputBase} font-label-caps text-label-caps uppercase tracking-widest`}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={unlocking || !password || view !== "lock"}
+                    className={buttonBase}
+                  >
+                    <Icon name="lock_open" />
+                    {unlocking ? "Unlocking…" : "Unlock"}
+                  </button>
+                </div>
+
+                {/* Generate row */}
+                <div
+                  aria-hidden={view !== "gen"}
+                  className={`${rowBase} ${
+                    view === "gen"
+                      ? "opacity-100"
+                      : "pointer-events-none translate-y-1 opacity-0"
+                  }`}
+                >
+                  <div className="relative flex-grow">
+                    <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">
+                      link
+                    </span>
+                    <input
+                      ref={urlRef}
+                      type="url"
+                      required
+                      disabled={view !== "gen"}
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      placeholder="https://example.com/news/story"
+                      className={`${inputBase} font-body-md`}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting || view !== "gen"}
+                    className={buttonBase}
+                  >
+                    <Icon name="bolt" />
+                    {submitting ? "Starting…" : "Generate"}
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Helper line under the password gate */}
-            {needsUnlock && (
-              <p className="mt-md flex items-center justify-center gap-xs font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">
+            {/* Gate helper / error — fades with the lock view */}
+            <div
+              className={`overflow-hidden transition-all duration-500 ease-out ${
+                view === "lock" ? "mt-md max-h-16 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <p className="flex items-center justify-center gap-xs font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">
                 <Icon name="shield" className="text-[12px]" />
                 Access-protected — unlock to generate on this browser
               </p>
-            )}
-            {needsUnlock && gateError && (
-              <p className="mt-xs font-label-caps text-[10px] uppercase text-error">{gateError}</p>
-            )}
+              {gateError && (
+                <p className="mt-xs font-label-caps text-[10px] uppercase text-error">{gateError}</p>
+              )}
+            </div>
 
             {/* Quality selector (and unlocked indicator) */}
             <div className="mt-md flex items-center justify-center gap-sm font-label-caps text-[11px] uppercase">
@@ -207,12 +248,14 @@ export default function Home() {
                   </button>
                 ))
               )}
-              {showGate && gate.authorized && (
-                <span className="flex items-center gap-xs rounded-sm border border-tertiary/40 bg-tertiary-container/15 px-sm py-xs text-tertiary">
-                  <Icon name="lock_open" className="text-[14px]" />
-                  Unlocked
-                </span>
-              )}
+              <span
+                className={`flex items-center gap-xs rounded-sm border border-tertiary/40 bg-tertiary-container/15 px-sm py-xs text-tertiary transition-all duration-500 ${
+                  showGate && gate.authorized ? "opacity-100" : "hidden opacity-0"
+                }`}
+              >
+                <Icon name="lock_open" className="text-[14px]" />
+                Unlocked
+              </span>
             </div>
 
             {error && (
