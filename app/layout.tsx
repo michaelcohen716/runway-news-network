@@ -21,7 +21,7 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Runway News Network",
-  description: "Paste a news link. Get a 30-second AI broadcast segment.",
+  description: "Paste a news link. Get an AI-anchored broadcast segment.",
 };
 
 export default function RootLayout({

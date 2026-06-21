@@ -35,8 +35,9 @@ CRITICAL — narration length is the hard constraint (overlong narration breaks 
 - Favor short, declarative sentences. Cut adjectives and clauses before exceeding budget.
 
 Structure:
-- Open with the anchor (kind "anchor") at the desk, then cut to illustrative B-roll scenes (kind "broll"); you may return to the anchor to close.
-- 4 to 5 scenes total. Each scene's targetSeconds is between ${MIN_SCENE_SECONDS} and ${MAX_SCENE_SECONDS}, and ALL targetSeconds must sum to about ${CONTENT_SECONDS} (±3).
+- Open with the anchor (kind "anchor") at the desk, then cut to illustrative B-roll scenes (kind "broll").
+- 4 to 6 scenes total. Each scene's targetSeconds is between ${MIN_SCENE_SECONDS} and ${MAX_SCENE_SECONDS}, and ALL targetSeconds must sum to about ${CONTENT_SECONDS} (±6).
+- END CLEANLY: the final scene must conclude the story on a natural closing beat — a brief anchor sign-off or a wrap-up line (e.g. "For Runway News Network, that's the story."). Never end mid-thought, mid-sentence, or on a dangling detail. The last narration line should feel like a deliberate close, and can be a touch shorter so the segment settles before it ends.
 
 Per-field rules:
 - narration: terse broadcast copy, factual to the article, no invented quotes or facts. Punchy news-anchor cadence. Respect the word budget above.
@@ -60,7 +61,7 @@ const STORYBOARD_TOOL: Anthropic.Tool = {
       },
       scenes: {
         type: "array",
-        description: "3–5 ordered scenes.",
+        description: "4–6 ordered scenes; the last concludes the story cleanly.",
         items: {
           type: "object",
           additionalProperties: false,

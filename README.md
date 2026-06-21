@@ -4,7 +4,7 @@
 
 # Runway News Network (RNN)
 
-**Paste a news link. Get a 30-second AI-anchored broadcast.**
+**Paste a news link. Get an AI-anchored broadcast segment.**
 
 RNN turns any news article into a short broadcast-style news segment: it reads the
 story, writes the script, generates an AI anchor and B-roll footage, adds chyrons

@@ -127,7 +127,7 @@ export default function Home() {
           <h1 className="mt-lg font-display-lg text-headline-lg leading-tight tracking-tight text-on-surface lg:text-[56px]">
             Paste a news link.
             <br />
-            Get a <span className="text-primary-container">30-second</span> broadcast.
+            Get an <span className="text-primary-container">AI-anchored</span> broadcast.
           </h1>
 
           <p className="mx-auto mt-md max-w-[32rem] font-body-md text-on-surface-variant">

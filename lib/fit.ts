@@ -22,6 +22,7 @@ import {
   CONTENT_SECONDS,
   MIN_SCENE_SECONDS,
   MAX_SCENE_SECONDS,
+  CLOSING_TAIL_SECONDS,
   wordsForSeconds,
 } from "@/lib/timing";
 import { log } from "@/lib/log";
@@ -61,7 +62,10 @@ export async function fitStoryboard(
 ): Promise<FitResult> {
   const tier = opts.tier;
   const target = opts.targetSeconds ?? CONTENT_SECONDS;
-  const tolerance = opts.toleranceSeconds ?? 3;
+  // Generous tolerance: only re-time when meaningfully off target, so we don't
+  // trim narration mid-thought just to shave a few seconds. Anything in this
+  // band reads naturally and stays well under a minute.
+  const tolerance = opts.toleranceSeconds ?? 7;
   // Each round re-synthesizes changed scenes — and every TTS call is a billable
   // Runway *task* that counts against the daily task cap. Keep this low: with
   // 0.85 damping, 2 rounds lands within a few seconds of target on most articles.
@@ -153,12 +157,15 @@ export async function fitStoryboard(
   // Snap each scene's targetSeconds to its measured duration, clamped to the
   // Runway clip range so downstream video stages have a valid length. The clip
   // is at least as long as the narration (rounded up) so speech is never cut.
-  for (const f of fitted) {
+  // The final scene gets an extra hold so the segment ends on a clean beat
+  // rather than cutting the instant the last word lands.
+  fitted.forEach((f, idx) => {
+    const tail = idx === fitted.length - 1 ? CLOSING_TAIL_SECONDS : 0;
     f.scene.targetSeconds = Math.min(
       HARD_MAX_SCENE_SECONDS,
-      Math.max(MIN_SCENE_SECONDS, Math.ceil(f.durationSeconds)),
+      Math.max(MIN_SCENE_SECONDS, Math.ceil(f.durationSeconds + tail)),
     );
-  }
+  });
 
   log.info(`fit done: ${total.toFixed(1)}s content over ${rounds} round(s)`);
   return { storyboard, scenes: fitted, totalSeconds: total, rounds };

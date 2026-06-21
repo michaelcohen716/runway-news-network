@@ -168,7 +168,7 @@ export function SegmentView({ id }: { id: string }) {
                 </span>
                 <span className="text-outline">·</span>
                 <span className="text-on-surface-variant">
-                  {job.tier === "final" ? "Final" : "Draft"} · 30s
+                  {job.tier === "final" ? "Final" : "Draft"} · ~45s
                 </span>
               </div>
 
