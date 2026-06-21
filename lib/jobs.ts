@@ -188,9 +188,18 @@ async function run(job: Job): Promise<void> {
           workDir: work,
           outputPath,
           onProgress: (stage, pct) => {
-            job.status = stage;
-            job.progress = pct;
-            void updateJob(job.id, { status: stage, progress: pct });
+            // The pipeline emits "completed" right after stitching — before the
+            // video is uploaded and videoUrl is set below. Hold the job at
+            // "stitching" so the client keeps polling until run() finalizes with
+            // a playable URL (otherwise it sees completed+no-video and stops).
+            if (stage === "completed") {
+              job.status = "stitching";
+              job.progress = 95;
+            } else {
+              job.status = stage;
+              job.progress = pct;
+            }
+            void updateJob(job.id, { status: job.status, progress: job.progress });
           },
           onArticle: (article) => void saveArticle(job.id, article),
           onStoryboard: (storyboard) => void saveStoryboard(job.id, storyboard),
